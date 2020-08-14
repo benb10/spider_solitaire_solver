@@ -14,8 +14,8 @@ card_to_num["Q"] = 12
 card_to_num["K"] = 13
 card_to_num["A"] = 1
 
-Box = namedtuple('Box', ['left', 'top', 'width', 'height'])
-Card = namedtuple('Card', ['val', 'box'])
+Box = namedtuple("Box", ["left", "top", "width", "height"])
+Card = namedtuple("Card", ["val", "box"])
 
 pag.PAUSE = 0.3
 pag.FAILSAFE = True
@@ -80,7 +80,7 @@ def get_card_locations():
     ]
     card_images = ["images/" + i for i in card_images]
 
-    im = pag.screenshot()
+    # im = pag.screenshot()
 
     x_min = 265
     x_max = 1301
@@ -97,21 +97,22 @@ def get_card_locations():
         card_image = Image.open(os.path.join(current_dir, card_image_file))
         card_image_list = to_list(numpy.asarray(card_image))
         # readin this way, we get 4 tuples instead of size 3 tuples.  Trim them down
-        card_image_list = [
-            [t[:3] for t in row] for row in card_image_list
-        ]
+        card_image_list = [[t[:3] for t in row] for row in card_image_list]
 
         # Ace is at [Box(left=590, top=337, width=60, height=9)]
         st = time()
-        found_cards = list(pag.locateAllOnScreen(card_image, region=search_region, grayscale=True))  # comment out later.  Just for testing
-        print(f'locateAllOnScreen method took {time() - st} s')
-
+        found_cards = list(
+            pag.locateAllOnScreen(card_image, region=search_region, grayscale=True)
+        )  # comment out later.  Just for testing
+        print(f"locateAllOnScreen method took {time() - st} s")
 
         for found_card in found_cards:
 
             # which row is it in?
             # where in that row is it?
-            card = Card(val=card_image_file.split('/')[-1].split('.')[0], box=found_card)
+            card = Card(
+                val=card_image_file.split("/")[-1].split(".")[0], box=found_card
+            )
 
             if not table:
                 table.append([card])
@@ -123,16 +124,15 @@ def get_card_locations():
             card_y = pag.center(card.box).y
 
             matches = [
-                i for i, range in enumerate(x_ranges)
+                i
+                for i, range in enumerate(x_ranges)
                 if card_x > range[0] and card_x < range[1]
             ]
 
             if not matches:
                 # make a new row:
                 rows_to_left = [
-                    i
-                    for i, range in enumerate(x_ranges)
-                    if card_x > range[1]
+                    i for i, range in enumerate(x_ranges) if card_x > range[1]
                 ]
                 if not rows_to_left:
                     table.insert(0, [card])
@@ -149,11 +149,7 @@ def get_card_locations():
 
             # where in that column does it go:
             y_ranges = get_y_ranges(column)
-            cards_above = [
-                i
-                for i, range in enumerate(y_ranges)
-                if card_y > range[1]
-            ]
+            cards_above = [i for i, range in enumerate(y_ranges) if card_y > range[1]]
             if not cards_above:
                 column.insert(0, card)
                 continue
@@ -190,7 +186,9 @@ def get_cards_to_click_full_runs(runs):
         top_run_val = run[0].val
         bottom_other_run_val = other_run[-1].val
 
-        can_make_move = card_to_num[top_run_val] + 1 == card_to_num[bottom_other_run_val]
+        can_make_move = (
+            card_to_num[top_run_val] + 1 == card_to_num[bottom_other_run_val]
+        )
 
         if can_make_move:
             cards_to_click.append(run[0])
@@ -204,8 +202,8 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
     runs = deepcopy(runs)
     table = deepcopy(table)
 
-    print('')
-    print('running get_cards_to_click_partial_runs_multiple')
+    print("")
+    print("running get_cards_to_click_partial_runs_multiple")
     count = 0
 
     while True:
@@ -217,18 +215,25 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
         cards_to_click = get_cards_to_click_partial_runs(runs, table)
 
         count += 1
-        print(f'    Run number {count} of get_cards_to_click_partial_runs, clicking {[c.val for c in cards_to_click]}')
+        print(
+            f"    Run number {count} of get_cards_to_click_partial_runs, clicking {[c.val for c in cards_to_click]}"
+        )
         all_cards_to_click.extend(cards_to_click)
 
         # Now modify runs and table to reflect the moves that have been made.  THis may not be 100% accurate.
         for card_to_click in cards_to_click:
-            card_positions = [(i, j) for i, col in enumerate(table) for j, card in enumerate(col) if card == card_to_click]
+            card_positions = [
+                (i, j)
+                for i, col in enumerate(table)
+                for j, card in enumerate(col)
+                if card == card_to_click
+            ]
             assert len(card_positions) == 1
             card_col, card_num = card_positions[0]
 
             cards_being_moved = table[card_col][card_num:]
             # remove from this row:
-            table[card_col] = table[card_col][: card_num]
+            table[card_col] = table[card_col][:card_num]
 
             # remove any columns from table if they no longer have any cards:
             table = [col for col in table if col]
@@ -251,18 +256,14 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
             col_it_could_be_placed_on.extend(cards_being_moved)
 
         # now just update the runs:
-        runs = [
-            get_run(col)
-            for col in table
-        ]
+        runs = [get_run(col) for col in table]
 
         if not cards_to_click:
             break
 
-    print('')
+    print("")
 
     return all_cards_to_click
-
 
 
 def get_cards_to_click_partial_runs(runs, table):
@@ -278,11 +279,7 @@ def get_cards_to_click_partial_runs(runs, table):
         return (len(run) + len(other_run), len(other_run))
 
     cards_to_click = []
-    run_pairs = sorted(
-        permutations(runs, 2),
-        key=_run_pair_sorter,
-        reverse=True
-    )
+    run_pairs = sorted(permutations(runs, 2), key=_run_pair_sorter, reverse=True)
     for run, other_run in run_pairs:
 
         bottom_other_run_val = other_run[-1].val
@@ -296,10 +293,9 @@ def get_cards_to_click_partial_runs(runs, table):
             destination_run_size = len(other_run)
             resulting_run_size = num_cards_moved + destination_run_size
 
-            can_make_move = (
-                card_to_num[this_card_val] + 1 == card_to_num[bottom_other_run_val] and
-                resulting_run_size > len(run)
-            )
+            can_make_move = card_to_num[this_card_val] + 1 == card_to_num[
+                bottom_other_run_val
+            ] and resulting_run_size > len(run)
 
             if can_make_move:
                 # We don't want a card entered twice
@@ -312,6 +308,7 @@ def get_cards_to_click_partial_runs(runs, table):
                     cards_to_click.append(card)
                 break
     return cards_to_click
+
 
 def run():
     start_time = time()
@@ -327,23 +324,15 @@ def run():
         (281, 202),
     ]
 
-
     consecutive_blank_fill_count = 0
 
     while True:
-        print('reading table...')
+        print("reading table...")
         table = get_card_locations()
-        print('finished reading table.')
-        runs = [
-            get_run(col)
-            for col in table
-        ]
-        vals = [
-            [card.val for card in column] for column in table
-        ]
-        run_vals = [
-            [card.val for card in column] for column in runs
-        ]
+        print("finished reading table.")
+        runs = [get_run(col) for col in table]
+        vals = [[card.val for card in column] for column in table]
+        run_vals = [[card.val for card in column] for column in runs]
         print("columns:")
         for col in vals:
             print(col)
@@ -356,7 +345,7 @@ def run():
         ######
 
         cards_to_click_vals = [card.val for card in cards_to_click]
-        print(f'Found these cards to click: {cards_to_click_vals}')
+        print(f"Found these cards to click: {cards_to_click_vals}")
 
         # Avoid infinite loop where there are 2 runs on the top row:
         ok_to_fill_blank = consecutive_blank_fill_count < 5
@@ -365,9 +354,7 @@ def run():
             consecutive_blank_fill_count += 1
 
             # click one of the runs to fill the blank space
-            top_of_runs = [
-                run[0] for run in runs
-            ]
+            top_of_runs = [run[0] for run in runs]
             # We want to avoid an infinite loop when trying to fill a blank column.  kept
             # clicking a card that was already down
             # A basic solution: just avoid clicking the highest card
@@ -401,7 +388,7 @@ def run():
             pag.moveTo(card_centre[0], card_centre[1], duration=0.5)
             pag.click(card_centre)
 
-        print(f'Runtime: {time() - start_time} s')
+        print(f"Runtime: {time() - start_time} s")
 
 
 if __name__ == "__main__":
