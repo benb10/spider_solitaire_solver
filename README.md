@@ -8,10 +8,17 @@ To run:
 
 1.  Make a new virtual environment.
 
+2.  Run `pip install -e .`
+
 2.  Open the page https://www.free-spider-solitaire.com/ so that a game is sitting ready to start, and fully visible
     on the screen.
 
-3.  On the command line, run `python main.py`.  Also, pip install any required packages (tool doesn't have a setup.py)
+3.  On the command line, run the entry point `solve`.
+
+
+Current Status:
+
+The solver can clear a few runs to the top, but hasn't finished a game yet.  Takes around 10-15 mins.
 
 
 Warning:

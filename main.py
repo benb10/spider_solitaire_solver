@@ -1,6 +1,6 @@
 import pyautogui as pag
 from time import time
-from collections import namedtuple, Counter
+from collections import namedtuple
 from itertools import permutations
 from copy import deepcopy
 import os
@@ -313,7 +313,7 @@ def get_cards_to_click_partial_runs(runs, table):
                 break
     return cards_to_click
 
-def smart_solve_1():
+def run():
     start_time = time()
 
     NUM_COLUMNS = 10
@@ -405,4 +405,4 @@ def smart_solve_1():
 
 
 if __name__ == "__main__":
-    smart_solve_1()
+    run()
