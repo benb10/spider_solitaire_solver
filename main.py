@@ -63,6 +63,11 @@ def to_list(array):
 
 
 def get_card_locations():
+    """This function reads the screen and returns an object representing all the cards currently
+    on the screen.
+
+    the returned object is a list where each element is a list of cards in a column.
+    """
     card_images = [
         "A.png",
         "2.png",
