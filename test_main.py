@@ -1,4 +1,5 @@
-from main import get_run, Card
+from main import get_run
+from screen_reader import Card
 
 
 def test_get_run():
