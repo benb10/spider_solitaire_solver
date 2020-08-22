@@ -1,7 +1,5 @@
 import os
 from collections import namedtuple
-from PIL import Image
-import numpy
 from time import time
 import pyautogui as pag
 import cv2
@@ -11,16 +9,7 @@ Box = namedtuple("Box", ["left", "top", "width", "height"])
 Card = namedtuple("Card", ["val", "box"])
 
 
-def to_list(array):
-    lst = []
-    for row in array:
-        lst.append([])
-        for element in row:
-            lst[-1].append(tuple(element))
-    return lst
-
-
-def ranges_overap(range_a, range_b):
+def ranges_overlap(range_a, range_b):
     a_start, a_end = range_a
     b_start, b_end = range_b
 
@@ -30,7 +19,7 @@ def ranges_overap(range_a, range_b):
     a_is_before_b = a_end < b_start
     b_is_before_a = b_end < a_start
 
-    # The ranges are disjoin if and only if range_a is completely before b OR range_b is completely before a
+    # The ranges are disjoint if and only if range_a is completely before b OR range_b is completely before a
     ranges_are_disjoint = a_is_before_b or b_is_before_a
     return not ranges_are_disjoint
 
@@ -68,16 +57,9 @@ def get_y_ranges(column):
 
 
 def get_image_matches(screenshot, target_image):
-    # img_rgb = cv2.imread('test_images/screen.png')
-
     img_gray = cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
     target_gray = cv2.cvtColor(target_image, cv2.COLOR_BGR2GRAY)
 
-    # img_gray = screenshot
-    # target_gray = target_image
-
-    # template = cv2.imread('images/Q.png',0)
-    # import ipdb; ipdb.set_trace()
     height, width = target_gray.shape
 
     res = cv2.matchTemplate(img_gray, target_gray, cv2.TM_CCOEFF_NORMED)
@@ -91,10 +73,6 @@ def get_image_matches(screenshot, target_image):
         boxes.append(Box(left=left, top=top, width=width, height=height))
 
     return boxes
-
-
-# x = a(cv2.imread('test_images/screen.png'), cv2.imread('images/Q.png',0))
-# print(x)
 
 
 def get_table(screenshot):
@@ -142,7 +120,7 @@ def get_table(screenshot):
             matches = [
                 i
                 for i, range in enumerate(x_ranges)
-                if ranges_overap(card_x_range, range)
+                if ranges_overlap(card_x_range, range)
             ]
 
             if not matches:
@@ -186,8 +164,3 @@ def get_card_locations():
     print(f"Finished in {time() - start_time} seconds")
 
     return table
-
-
-t = get_card_locations()
-for x in t:
-    print([e.val for e in x])

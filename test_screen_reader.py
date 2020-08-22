@@ -1,6 +1,7 @@
-from screen_reader import get_table
+from screen_reader import get_table, ranges_overlap
 import cv2
 import os
+import pytest
 
 
 def test_get_table():
@@ -26,3 +27,11 @@ def test_get_table():
     ]
 
     assert card_values == expected_card_values
+
+
+@pytest.mark.parametrize(
+    ("range_1", "range_2", "is_overlap"),
+    [((0, 1), (3, 4), False), ((31, 123), (99, 400), True)],
+)
+def test_ranges_overap(range_1, range_2, is_overlap):
+    assert ranges_overlap(range_1, range_2) == is_overlap
