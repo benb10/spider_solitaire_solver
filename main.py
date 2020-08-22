@@ -62,7 +62,7 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
     count = 0
 
     while True:
-        if count > 15:
+        if count > 8:
             print(f"Issue in get_cards_to_click_partial_runs_multiple.  Breaking loop")
             # TODO investigate and fix this
             return all_cards_to_click
