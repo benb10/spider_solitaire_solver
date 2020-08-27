@@ -1,5 +1,5 @@
 import pyautogui as pag
-from time import time
+from time import time, sleep
 from itertools import permutations
 from copy import deepcopy
 
@@ -62,7 +62,7 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
     count = 0
 
     while True:
-        if count > 15:
+        if count > 8:
             print(f"Issue in get_cards_to_click_partial_runs_multiple.  Breaking loop")
             # TODO investigate and fix this
             return all_cards_to_click
@@ -236,6 +236,9 @@ def run():
             new_row_count += 1
             pag.moveTo(new_row_loc[0], new_row_loc[1], duration=0.5)
             pag.click(new_row_loc)
+            sleep(
+                2
+            )  # wait for a moment while the cards all move into place, before we read the screen
             continue
 
         for card in cards_to_click:

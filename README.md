@@ -18,7 +18,7 @@ To run:
 
 Current Status:
 
-The solver can clear a few runs to the top, but hasn't finished a game yet.  Takes around 10-15 mins.
+The solver can clear a few runs to the top, but hasn't finished a game yet.  Takes around 5-10 mins.
 
 
 Warning:
