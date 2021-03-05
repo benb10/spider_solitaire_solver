@@ -1,7 +1,8 @@
 import pyautogui as pag
 from time import time, sleep
-from itertools import permutations
+from itertools import permutations, chain
 from copy import deepcopy
+import random
 
 from screen_reader import get_card_locations, get_new_rew_loc
 
@@ -11,6 +12,8 @@ card_to_num["J"] = 11
 card_to_num["Q"] = 12
 card_to_num["K"] = 13
 card_to_num["A"] = 1
+
+num_to_card = {v: k for k, v in card_to_num.items()}
 
 pag.PAUSE = 0.3
 pag.FAILSAFE = True
@@ -55,6 +58,7 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
 
     # Keep new copy so we don't mutate these
     runs = deepcopy(runs)
+    original_runs = deepcopy(runs)
     table = deepcopy(table)
 
     print("")
@@ -118,7 +122,47 @@ def get_cards_to_click_partial_runs_multiple(runs, table):
 
     print("")
 
+    check_runs_to_complete(all_cards_to_click, original_runs, table)
+
     return all_cards_to_click
+
+
+def check_runs_to_complete(all_cards_to_click, runs, table):
+    # if there are any cards we can click to complete a run, do that first
+
+    # for simplpicity, just look for a max on one instance here
+    runs_starting_with_king = [run for run in runs if run[0].val == "K"]
+    runs_ending_with_ace = [run for run in runs if run[-1].val == "A"]
+
+    if not (runs_starting_with_king and runs_ending_with_ace):
+        # we can't do anything here
+        return
+
+    run_starting_with_king = max(runs_starting_with_king, key=lambda run: len(run))
+    run_ending_with_ace = max(runs_ending_with_ace, key=lambda run: len(run))
+
+    end_of_king_run = run_starting_with_king[-1]
+    end_of_king_run_card_num = card_to_num[end_of_king_run.val]
+    card_num_we_want_to_click = end_of_king_run_card_num - 1
+    try:
+        card_val_we_want_to_click = num_to_card[card_num_we_want_to_click]
+    except:
+        import ipdb
+
+        ipdb.set_trace()
+
+    card_to_click = next(
+        (c for c in run_ending_with_ace if c.val == card_val_we_want_to_click), None
+    )
+
+    if card_to_click:
+        # check if it is already in the list of cards to click:
+        try:
+            all_cards_to_click.remove(card_to_click)
+        except ValueError:
+            pass
+
+        all_cards_to_click.insert(0, card_to_click)
 
 
 def get_cards_to_click_partial_runs(runs, table):
@@ -165,12 +209,52 @@ def get_cards_to_click_partial_runs(runs, table):
     return cards_to_click
 
 
+def click_location(location):
+    pag.moveTo(location[0], location[1], duration=0.3)
+    pag.click(location)
+
+
+def click_card(card):
+    card_centre = pag.center(card.box)
+    click_location(card_centre)
+
+
+def click_highest_run_down(runs):
+    # click one of the runs to fill the blank space
+    top_of_runs = [run[0] for run in runs]
+    # We want to avoid an infinite loop when trying to fill a blank column.  We kept
+    # clicking a card that was already down
+    # A basic solution: just click the lowest card
+
+    card_to_click = max(
+        top_of_runs, key=lambda card: card.box.top
+    )  # max = lowest on screen
+    print(f"filling blank space, clicking {card_to_click.val}")
+    click_card(card_to_click)
+
+
+def click_lowest_card_random(table):
+    all_cards = list(chain(*table))
+
+    # We can get stuck in an infinite loop where we keep clicking a 4 which goes between 2 fives.
+    # 50% of the time, lets click a random card
+    choose_random_card = random.choice((True, False))
+
+    if choose_random_card:
+        card_to_click = random.choice(all_cards)
+    else:
+        card_to_click = max(all_cards, key=lambda card: card.box.top)
+
+    click_card(card_to_click)
+
+
 def run():
     start_time = time()
 
     NUM_COLUMNS = 10
 
     consecutive_blank_fill_count = 0
+    ok_to_improve_runs = True
 
     while True:
         print("reading table...")
@@ -192,33 +276,29 @@ def run():
         for col in run_vals:
             print(col)
 
-        # cards_to_click = get_cards_to_click_partial_runs(runs, table)
-        cards_to_click = get_cards_to_click_partial_runs_multiple(runs, table)
-        ######
+        cards_to_click = (
+            get_cards_to_click_partial_runs_multiple(runs, table)
+            if ok_to_improve_runs
+            else []
+        )
 
         cards_to_click_vals = [card.val for card in cards_to_click]
         print(f"Found these cards to click: {cards_to_click_vals}")
 
+        need_to_fill_blanks = not cards_to_click and len(table) < NUM_COLUMNS
+
         # Avoid infinite loop where there are 2 runs on the top row:
-        ok_to_fill_blank = consecutive_blank_fill_count < 5
+        is_an_early_attempt = consecutive_blank_fill_count < 3
 
-        if not cards_to_click and len(table) < NUM_COLUMNS and ok_to_fill_blank:
-
-            # click one of the runs to fill the blank space
-            top_of_runs = [run[0] for run in runs]
-            # We want to avoid an infinite loop when trying to fill a blank column.  kept
-            # clicking a card that was already down
-            # A basic solution: just avoid clicking the highest card
-            # Try clicking the nth card on the nths turn
-
-            # order by height, top to bottom
-            top_of_runs.sort(key=lambda card: card.box.top)
-            card_to_click = top_of_runs[consecutive_blank_fill_count]
-            print(f"filling blank space, clicking {card_to_click.val}")
-            card_centre = pag.center(card_to_click.box)
-            pag.moveTo(card_centre[0], card_centre[1], duration=0.2)
-            pag.click(card_centre)
+        if need_to_fill_blanks and is_an_early_attempt:
+            click_highest_run_down(runs)
             consecutive_blank_fill_count += 1
+            continue
+
+        if need_to_fill_blanks and not is_an_early_attempt:
+            print("Extreme measure.  Just click the lowest card.")
+            ok_to_improve_runs = False
+            click_lowest_card_random(table)
             continue
 
         consecutive_blank_fill_count = 0
@@ -227,19 +307,21 @@ def run():
             # click for new row to come down:
             print("clicking the next row down")
             new_row_loc = get_new_rew_loc()
-            pag.moveTo(new_row_loc[0], new_row_loc[1], duration=0.5)
-            pag.click(new_row_loc)
+            click_location(new_row_loc)
             sleep(
                 2
             )  # wait for a moment while the cards all move into place, before we read the screen
+            # reset this state variable:
+            ok_to_improve_runs = True
             continue
 
         for card in cards_to_click:
-            card_centre = pag.center(card.box)
-            pag.moveTo(card_centre[0], card_centre[1], duration=0.2)
-            pag.click(card_centre)
+            click_card(card)
 
         print(f"Runtime: {time() - start_time} s")
+        sleep(
+            2
+        )  # wait for a moment, just in case we are waiting for a complete run to move to the top.
 
 
 if __name__ == "__main__":
