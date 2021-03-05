@@ -204,7 +204,6 @@ def run():
 
         if not cards_to_click and len(table) < NUM_COLUMNS and ok_to_fill_blank:
 
-
             # click one of the runs to fill the blank space
             top_of_runs = [run[0] for run in runs]
             # We want to avoid an infinite loop when trying to fill a blank column.  kept

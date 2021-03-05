@@ -13,16 +13,18 @@ def test_get_table():
 
     card_values = [[card.val for card in column] for column in table]
 
-    expected_card_values = [['10', '8', 'J', 'K', 'K', '7'],
- ['7', 'A', 'Q', 'J', 'Q', 'Q'],
- ['10', '5', '5', '6', '10', '5'],
- ['3', '2', 'A', '4', '3', '9', '6', 'J'],
- ['5', '6', '4', 'K', '3', '8'],
- ['3', 'J', '10', '6', '2', '6'],
- ['K', '9', '4', '7', 'Q', '4'],
- ['8', 'K', '6', 'J', '8', '9'],
- ['3', '8', '7', '4', '8', 'J'],
- ['10', 'Q', 'A', '4', '2', 'J']]
+    expected_card_values = [
+        ["10", "8", "J", "K", "K", "7"],
+        ["7", "A", "Q", "J", "Q", "Q"],
+        ["10", "5", "5", "6", "10", "5"],
+        ["3", "2", "A", "4", "3", "9", "6", "J"],
+        ["5", "6", "4", "K", "3", "8"],
+        ["3", "J", "10", "6", "2", "6"],
+        ["K", "9", "4", "7", "Q", "4"],
+        ["8", "K", "6", "J", "8", "9"],
+        ["3", "8", "7", "4", "8", "J"],
+        ["10", "Q", "A", "4", "2", "J"],
+    ]
 
     assert card_values == expected_card_values
 
@@ -36,14 +38,14 @@ def test_get_table_avoid_aces_at_the_top():
 
     card_values = [[card.val for card in column] for column in table]
 
-
-    expected_card_values = [['5', '2', 'A', 'Q', 'J', '10', '9'],
- ['Q'],
- ['4'],
- ['K', 'K', '5', '4', '3', '2', 'A', '10', '9'],
- ['8', '7', '5', '2'],
- ['K', '5', 'Q', 'J', '10', '9', '8', '7', '6'],
- ['2', 'A']  # no aces at the top of last 3 columns
+    expected_card_values = [
+        ["5", "2", "A", "Q", "J", "10", "9"],
+        ["Q"],
+        ["4"],
+        ["K", "K", "5", "4", "3", "2", "A", "10", "9"],
+        ["8", "7", "5", "2"],
+        ["K", "5", "Q", "J", "10", "9", "8", "7", "6"],
+        ["2", "A"],  # no aces at the top of last 3 columns
     ]
 
     assert card_values == expected_card_values

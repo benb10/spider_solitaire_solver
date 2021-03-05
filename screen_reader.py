@@ -85,9 +85,17 @@ def card_overlaps_existing_card(card, table):
         card_x_range = (card.box.left, card.box.left + card.box.width)
         card_y_range = (card.box.top, card.box.top + card.box.height)
 
-        existing_card_x_range = (existing_card.box.left, existing_card.box.left + existing_card.box.width)
-        existing_card_y_range = (existing_card.box.top, existing_card.box.top + existing_card.box.height)
-        card_boxes_overlap = ranges_overlap(card_x_range, existing_card_x_range) and ranges_overlap(card_y_range, existing_card_y_range)
+        existing_card_x_range = (
+            existing_card.box.left,
+            existing_card.box.left + existing_card.box.width,
+        )
+        existing_card_y_range = (
+            existing_card.box.top,
+            existing_card.box.top + existing_card.box.height,
+        )
+        card_boxes_overlap = ranges_overlap(
+            card_x_range, existing_card_x_range
+        ) and ranges_overlap(card_y_range, existing_card_y_range)
         if card_boxes_overlap:
             return True
     return False
@@ -132,7 +140,9 @@ def get_table(screenshot):
                 continue
 
             if card_overlaps_existing_card(card, table):
-                print(f"Skipping match for {card_image_file}.  It overlaps an existing card.")
+                print(
+                    f"Skipping match for {card_image_file}.  It overlaps an existing card."
+                )
                 continue
 
             x_ranges = get_x_ranges(table)
@@ -203,7 +213,7 @@ def removes_aces_at_top(table):
     ACE_CEILING_BUFFER = 100  # rough estimate based on investigation
 
     all_cards = chain(*table)
-    non_ace_cards = [c for c in all_cards if c.val != 'A']
+    non_ace_cards = [c for c in all_cards if c.val != "A"]
     highest_non_ace_card = min(non_ace_cards, key=lambda c: c.box.top)
     ace_ceiling = highest_non_ace_card.box.top - ACE_CEILING_BUFFER
 
@@ -237,7 +247,9 @@ def read_image(filepath):
 
 
 def get_new_rew_loc():
-    new_row_card_image = read_image(os.path.join(os.path.dirname(__file__), "images/new_row.png"))
+    new_row_card_image = read_image(
+        os.path.join(os.path.dirname(__file__), "images/new_row.png")
+    )
 
     screenshot = get_screenshot()
 
