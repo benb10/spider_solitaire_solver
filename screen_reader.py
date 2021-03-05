@@ -6,6 +6,7 @@ import pyautogui as pag
 import cv2
 import numpy as np
 from itertools import chain
+from copy import deepcopy
 
 Box = namedtuple("Box", ["left", "top", "width", "height"])
 Card = namedtuple("Card", ["val", "box"])
@@ -118,10 +119,7 @@ def get_table(screenshot):
     table = []
 
     for card_image_file in card_images:
-        card_path = os.path.join(current_dir, card_image_file)
-        card_image = cv2.imread(card_path)
-        if card_image is None:
-            raise ValueError(f"Could not read card image {card_path}.")
+        card_image = read_image(os.path.join(current_dir, card_image_file))
         boxes = get_image_matches(screenshot, target_image=card_image)
 
         for box in boxes:
@@ -178,12 +176,78 @@ def get_table(screenshot):
             insert_loc = card_index_above + 1
             column.insert(insert_loc, card)
 
+    table = removes_aces_at_top(table)
+
     return table
 
 
-def get_card_locations():
-    start_time = time()
-    print(f"Reading the cards on screen... ", end="")
+def removes_aces_at_top(table):
+    """Remove aces which are in the top row, showing the completed runs.
+
+    This is a post processing step which is run after the screen is read.
+
+    The rule of thumb is to iterate through each column and remove an
+    ace at the top if it is more than x pixels higher than the highest
+    non ace card in on the table.
+    """
+    # Code used to check avg distances:
+
+    # for col in table:
+    #     for (a, b) in zip(col, col[1:]):
+    #         a_bottom = a.box.top + a.box.height
+    #         print(f"aaaaaa {b.box.top - a_bottom}")
+
+    # avg_distance_between_stacked_cards = 30  # pixels
+    # avg_distance_to_top_aces = 180  # pixels
+
+    ACE_CEILING_BUFFER = 100  # rough estimate based on investigation
+
+    all_cards = chain(*table)
+    non_ace_cards = [c for c in all_cards if c.val != 'A']
+    highest_non_ace_card = min(non_ace_cards, key=lambda c: c.box.top)
+    ace_ceiling = highest_non_ace_card.box.top - ACE_CEILING_BUFFER
+
+    new_table = deepcopy(table)
+
+    for column in new_table:
+        top_card = column[0]
+        if top_card.val != "A":
+            continue
+
+        # remember that lower "top" values are higher on the screen
+        ace_is_too_high = top_card.box.top < ace_ceiling
+
+        if ace_is_too_high:
+            print(f"Removing card identified as top ro ace: {top_card}.")
+            column.pop(0)
+
+    # we may have reduced a column ot an empty list.  Remove them:
+    new_table = [col for col in new_table if col]
+
+    return new_table
+
+
+def read_image(filepath):
+    image = cv2.imread(filepath)
+    if image is None:
+        # If the file path does not exist, image will just be None.
+        # Let's raise an error here
+        raise ValueError(f"Could not read card image {filepath}.")
+    return image
+
+
+def get_new_rew_loc():
+    new_row_card_image = read_image(os.path.join(os.path.dirname(__file__), "images/new_row.png"))
+
+    screenshot = get_screenshot()
+
+    boxes = get_image_matches(screenshot, target_image=new_row_card_image)
+
+    # Hopefully the first one is correct:
+    return pag.center(boxes[0])
+
+
+def get_screenshot():
     screenshot = pag.screenshot()
 
     # debug step
@@ -192,7 +256,14 @@ def get_card_locations():
     Path(debug_dir).mkdir(exist_ok=True)
     screenshot.save(os.path.join(debug_dir, "screenshot.png"), "PNG")
 
-    table = get_table(np.array(screenshot))
+    return np.array(screenshot)
+
+
+def get_card_locations():
+    start_time = time()
+    print(f"Reading the cards on screen... ", end="")
+    screenshot = get_screenshot()
+    table = get_table(screenshot)
     print(f"Finished in {time() - start_time} seconds")
 
     return table

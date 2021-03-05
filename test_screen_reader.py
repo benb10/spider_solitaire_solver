@@ -27,6 +27,28 @@ def test_get_table():
     assert card_values == expected_card_values
 
 
+def test_get_table_avoid_aces_at_the_top():
+    current_dir = os.path.dirname(__file__)
+    input_screenshot = cv2.imread(
+        os.path.join(current_dir, "test_images", "aces_up_top.png")
+    )
+    table = get_table(input_screenshot)
+
+    card_values = [[card.val for card in column] for column in table]
+
+
+    expected_card_values = [['5', '2', 'A', 'Q', 'J', '10', '9'],
+ ['Q'],
+ ['4'],
+ ['K', 'K', '5', '4', '3', '2', 'A', '10', '9'],
+ ['8', '7', '5', '2'],
+ ['K', '5', 'Q', 'J', '10', '9', '8', '7', '6'],
+ ['2', 'A']  # no aces at the top of last 3 columns
+    ]
+
+    assert card_values == expected_card_values
+
+
 @pytest.mark.parametrize(
     ("range_1", "range_2", "is_overlap"),
     [((0, 1), (3, 4), False), ((31, 123), (99, 400), True)],

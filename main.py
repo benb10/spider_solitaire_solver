@@ -3,7 +3,7 @@ from time import time, sleep
 from itertools import permutations
 from copy import deepcopy
 
-from screen_reader import get_card_locations
+from screen_reader import get_card_locations, get_new_rew_loc
 
 
 card_to_num = {str(i): i for i in range(2, 11)}
@@ -170,15 +170,6 @@ def run():
 
     NUM_COLUMNS = 10
 
-    new_row_count = 0
-    new_row_locs = [
-        (360, 202),
-        (339, 202),
-        (321, 202),
-        (302, 202),
-        (281, 202),
-    ]
-
     consecutive_blank_fill_count = 0
 
     while True:
@@ -212,25 +203,23 @@ def run():
         ok_to_fill_blank = consecutive_blank_fill_count < 5
 
         if not cards_to_click and len(table) < NUM_COLUMNS and ok_to_fill_blank:
-            consecutive_blank_fill_count += 1
+
 
             # click one of the runs to fill the blank space
             top_of_runs = [run[0] for run in runs]
             # We want to avoid an infinite loop when trying to fill a blank column.  kept
             # clicking a card that was already down
             # A basic solution: just avoid clicking the highest card
-            highest_card = min(top_of_runs, key=lambda card: card.box.top)
+            # Try clicking the nth card on the nths turn
 
-            card_to_click = max(
-                top_of_runs,
-                key=lambda card: (card != highest_card, card_to_num[card.val]),
-                # card.box.top to avoid an infinite loop when trying to fill a blank column.  kept
-                # clicking a card that was already down
-            )
+            # order by height, top to bottom
+            top_of_runs.sort(key=lambda card: card.box.top)
+            card_to_click = top_of_runs[consecutive_blank_fill_count]
             print(f"filling blank space, clicking {card_to_click.val}")
             card_centre = pag.center(card_to_click.box)
-            pag.moveTo(card_centre[0], card_centre[1], duration=0.5)
+            pag.moveTo(card_centre[0], card_centre[1], duration=0.2)
             pag.click(card_centre)
+            consecutive_blank_fill_count += 1
             continue
 
         consecutive_blank_fill_count = 0
@@ -238,8 +227,7 @@ def run():
         if not cards_to_click:
             # click for new row to come down:
             print("clicking the next row down")
-            new_row_loc = new_row_locs[new_row_count]
-            new_row_count += 1
+            new_row_loc = get_new_rew_loc()
             pag.moveTo(new_row_loc[0], new_row_loc[1], duration=0.5)
             pag.click(new_row_loc)
             sleep(
@@ -249,7 +237,7 @@ def run():
 
         for card in cards_to_click:
             card_centre = pag.center(card.box)
-            pag.moveTo(card_centre[0], card_centre[1], duration=0.5)
+            pag.moveTo(card_centre[0], card_centre[1], duration=0.2)
             pag.click(card_centre)
 
         print(f"Runtime: {time() - start_time} s")
