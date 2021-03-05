@@ -184,7 +184,13 @@ def run():
     while True:
         print("reading table...")
         table = get_card_locations()
+
+        if table:
+            print(f"Found {sum(len(col) for col in table)} cards on the screen")
+        else:
+            raise ValueError("Unable to identify any cards on the screen")
         print("finished reading table.")
+
         runs = [get_run(col) for col in table]
         vals = [[card.val for card in column] for column in table]
         run_vals = [[card.val for card in column] for column in runs]

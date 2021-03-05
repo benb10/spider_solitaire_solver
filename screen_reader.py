@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 from collections import namedtuple
 from time import time
 import pyautogui as pag
 import cv2
 import numpy as np
+from itertools import chain
 
 Box = namedtuple("Box", ["left", "top", "width", "height"])
 Card = namedtuple("Card", ["val", "box"])
@@ -75,6 +77,21 @@ def get_image_matches(screenshot, target_image):
     return boxes
 
 
+def card_overlaps_existing_card(card, table):
+    existing_cards = chain(*table)
+
+    for existing_card in existing_cards:
+        card_x_range = (card.box.left, card.box.left + card.box.width)
+        card_y_range = (card.box.top, card.box.top + card.box.height)
+
+        existing_card_x_range = (existing_card.box.left, existing_card.box.left + existing_card.box.width)
+        existing_card_y_range = (existing_card.box.top, existing_card.box.top + existing_card.box.height)
+        card_boxes_overlap = ranges_overlap(card_x_range, existing_card_x_range) and ranges_overlap(card_y_range, existing_card_y_range)
+        if card_boxes_overlap:
+            return True
+    return False
+
+
 def get_table(screenshot):
     """This function reads the given screeshot and returns an object representing all the cards currently
     on the screen.
@@ -101,7 +118,10 @@ def get_table(screenshot):
     table = []
 
     for card_image_file in card_images:
-        card_image = cv2.imread(os.path.join(current_dir, card_image_file))
+        card_path = os.path.join(current_dir, card_image_file)
+        card_image = cv2.imread(card_path)
+        if card_image is None:
+            raise ValueError(f"Could not read card image {card_path}.")
         boxes = get_image_matches(screenshot, target_image=card_image)
 
         for box in boxes:
@@ -111,6 +131,10 @@ def get_table(screenshot):
 
             if not table:
                 table.append([card])
+                continue
+
+            if card_overlaps_existing_card(card, table):
+                print(f"Skipping match for {card_image_file}.  It overlaps an existing card.")
                 continue
 
             x_ranges = get_x_ranges(table)
@@ -160,7 +184,15 @@ def get_table(screenshot):
 def get_card_locations():
     start_time = time()
     print(f"Reading the cards on screen... ", end="")
-    table = get_table(np.array(pag.screenshot()))
+    screenshot = pag.screenshot()
+
+    # debug step
+    dir_name = os.path.split(__file__)[0]
+    debug_dir = os.path.join(dir_name, "debug")
+    Path(debug_dir).mkdir(exist_ok=True)
+    screenshot.save(os.path.join(debug_dir, "screenshot.png"), "PNG")
+
+    table = get_table(np.array(screenshot))
     print(f"Finished in {time() - start_time} seconds")
 
     return table
